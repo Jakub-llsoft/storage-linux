@@ -1,5 +1,4 @@
 ---
-
 # Main collection of env. vars to set for all tasks and scripts.
 env:
     ####
@@ -13,20 +12,17 @@ env:
     SCRIPT_BASE: "./contrib/cirrus"
     # No need to go crazy, but grab enough to cover most PRs
     CIRRUS_CLONE_DEPTH: 50
-
     ####
     #### Cache-image names to test with (double-quotes around names are critical)
     ###
     FEDORA_NAME: "fedora-42"
     DEBIAN_NAME: "debian-13"
-
     # GCE project where images live
     IMAGE_PROJECT: "libpod-218412"
     # VM Image built in containers/automation_images
     IMAGE_SUFFIX: "c20250422t130822z-f42f41d13"
     FEDORA_CACHE_IMAGE_NAME: "fedora-${IMAGE_SUFFIX}"
     DEBIAN_CACHE_IMAGE_NAME: "debian-${IMAGE_SUFFIX}"
-
     ####
     #### Command variables to help avoid duplication
     ####
@@ -46,29 +42,25 @@ timeout_in: 120m
 # Default VM to use unless set or modified by task
 gce_instance:
     image_project: "${IMAGE_PROJECT}"
-    zone: "us-central1-b"  # Required by Cirrus for the time being
+    zone: "us-central1-b" # Required by Cirrus for the time being
     cpu: 2
     memory: "4Gb"
     disk: 200
     image_name: "${FEDORA_CACHE_IMAGE_NAME}"
 
-
 linux_testing: &linux_testing
     depends_on:
         - lint
-    gce_instance:  # Only need to specify differences from defaults (above)
+    gce_instance: # Only need to specify differences from defaults (above)
         image_name: "${VM_IMAGE}"
-
     # Separate scripts for separate outputs, makes debugging easier.
     setup_script: '${CIRRUS_WORKING_DIR}/${SCRIPT_BASE}/setup.sh |& ${_TIMESTAMP}'
     build_and_test_script: '${CIRRUS_WORKING_DIR}/${SCRIPT_BASE}/build_and_test.sh |& ${_TIMESTAMP}'
-
     always:
         df_script: '${_DFCMD} || true'
         rh_audit_log_script: '${_RAUDITCMD} || true'
         debian_audit_log_script: '${_UAUDITCMD} || true'
         journal_log_script: '${_JOURNALCMD} || true'
-
 
 fedora_testing_task: &fedora_testing
     <<: *linux_testing
@@ -92,7 +84,6 @@ fedora_testing_task: &fedora_testing
         - env:
             TEST_DRIVER: "btrfs"
 
-
 # aufs was dropped between 20.04 and 22.04, can't test it
 debian_testing_task: &debian_testing
     <<: *linux_testing
@@ -114,7 +105,6 @@ debian_testing_task: &debian_testing
         - env:
             TEST_DRIVER: "btrfs"
 
-
 lint_task:
     alias: lint
     env:
@@ -133,16 +123,13 @@ lint_task:
       make lint
       make clean
 
-
 # Update metadata on VM images referenced by this repository state
 meta_task:
     alias: meta
-
     container:
         image: "quay.io/libpod/imgts:latest"
         cpu: 1
         memory: 1
-
     env:
         # Space-separated list of images used by this repository state
         IMGNAMES: |-
@@ -153,10 +140,8 @@ meta_task:
         GCPJSON: ENCRYPTED[244a93fe8b386b48b96f748342bf741350e43805eee81dd04b45093bdf737e540b993fc735df41f131835fa0f9b65826]
         GCPNAME: ENCRYPTED[91cf7aa421858b26b67835978d224b4a5c46afcf52a0f1ec1b69a99b248715dc8e92a1b56fde18e092acf256fa80ae9c]
         GCPPROJECT: ENCRYPTED[79b0f7eb5958e25bc7095d5d368fa8d94447a43ffacb9c693de438186e2f767b7efe9563d6954297ae4730220e10aa9c]
-        CIRRUS_CLONE_DEPTH: 1  # source not used
-
+        CIRRUS_CLONE_DEPTH: 1 # source not used
     script: '/usr/local/bin/entrypoint.sh |& ${_TIMESTAMP}'
-
 
 vendor_task:
     alias: vendor
@@ -188,8 +173,7 @@ codespell_task:
     build_script: pip install codespell
     test_script: codespell
 
-
-# Status aggregator for all tests.  This task simply ensures a defined
+# Status aggregator for all tests. This task simply ensures a defined
 # set of tasks all passed, and allows confirming that based on the status
 # of this task.
 success_task:
@@ -208,5 +192,5 @@ success_task:
         - codespell
     container:
         image: golang:1.21
-    clone_script: 'mkdir -p "$CIRRUS_WORKING_DIR"'  # Source code not needed
+    clone_script: 'mkdir -p "$CIRRUS_WORKING_DIR"' # Source code not needed
     script: /bin/true
